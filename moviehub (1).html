@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Movie Hub+</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#000;--surface:#1c1c1e;--surface-hover:#2c2c2e;
+      --border:rgba(255,255,255,0.1);--text:#fff;
+      --text-sec:rgba(255,255,255,0.5);--text-muted:rgba(255,255,255,0.28);
+      --text-tag:rgba(255,255,255,0.35);--sep:rgba(255,255,255,0.08);
+      --icon-bg:#2c2c2e;--dock-bg:rgba(255,255,255,0.07);
+      --dock-border:rgba(255,255,255,0.1);--dock-label:rgba(255,255,255,0.4);
+      --settings-bg:#1c1c1e;--settings-border:rgba(255,255,255,0.12);
+      --settings-hover:rgba(255,255,255,0.06);--apple-logo:#f5f5f7;
+    }
+    [data-theme="light"]{
+      --bg:#f2f2f7;--surface:#fff;--surface-hover:#e8e8ed;
+      --border:rgba(0,0,0,0.08);--text:#000;
+      --text-sec:rgba(0,0,0,0.5);--text-muted:rgba(0,0,0,0.3);
+      --text-tag:rgba(0,0,0,0.38);--sep:rgba(0,0,0,0.07);--icon-bg:#f0f0f5;
+      --dock-bg:rgba(255,255,255,0.75);--dock-border:rgba(0,0,0,0.1);
+      --dock-label:rgba(0,0,0,0.4);--settings-bg:#fff;
+      --settings-border:rgba(0,0,0,0.1);--settings-hover:rgba(0,0,0,0.04);
+      --apple-logo:#1c1c1e;
+    }
+    html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;-webkit-font-smoothing:antialiased}
+    body{
+      background:var(--bg);color:var(--text);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      min-height:100vh;padding:2rem 2rem 80px;gap:40px;
+      position:relative;overflow:hidden;transition:background 0.5s,color 0.35s;
+    }
+
+    /* ══ BACKGROUNDS ══ */
+    .bg-layer{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity 0.7s}
+    .bg-layer.active{opacity:1}
+    #bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+    #bg-aurora{background:#03030f}
+    .aurora-blob{position:absolute;border-radius:50%;filter:blur(90px);animation:blobDrift 13s ease-in-out infinite alternate}
+    .ab1{width:600px;height:500px;background:rgba(100,30,220,0.4);top:-100px;left:-100px}
+    .ab2{width:500px;height:500px;background:rgba(0,160,140,0.3);bottom:-80px;right:-80px;animation-duration:17s;animation-delay:-6s}
+    .ab3{width:400px;height:400px;background:rgba(20,60,200,0.28);top:40%;left:30%;animation-duration:11s;animation-delay:-3s}
+    @keyframes blobDrift{0%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-30px) scale(1.08)}66%{transform:translate(-20px,40px) scale(0.95)}100%{transform:translate(30px,20px) scale(1.04)}}
+
+    #bg-mesh{background:#06060e}
+    .mb1{position:absolute;width:700px;height:700px;border-radius:50%;filter:blur(100px);background:rgba(80,0,150,0.35);top:-200px;left:-150px;animation:meshA 16s ease-in-out infinite alternate}
+    .mb2{position:absolute;width:600px;height:600px;border-radius:50%;filter:blur(100px);background:rgba(0,40,120,0.3);bottom:-150px;right:-100px;animation:meshB 19s ease-in-out infinite alternate}
+    .mb3{position:absolute;width:400px;height:400px;border-radius:50%;filter:blur(80px);background:rgba(0,100,80,0.22);top:50%;left:50%;animation:meshC 14s ease-in-out infinite alternate;animation-delay:-5s}
+    @keyframes meshA{0%{transform:translate(0,0)}100%{transform:translate(120px,80px)}}
+    @keyframes meshB{0%{transform:translate(0,0)}100%{transform:translate(-100px,-70px)}}
+    @keyframes meshC{0%{transform:translate(-50%,-50%) scale(1)}100%{transform:translate(-50%,-50%) scale(1.4) rotate(30deg)}}
+
+    #bg-depth{background:#000}
+    .db1{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,#181828 0%,transparent 65%);animation:depthPulse 8s ease-in-out infinite alternate}
+    .db2{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 60%,rgba(40,40,100,0.25) 0%,transparent 50%);animation:depthDrift 12s ease-in-out infinite alternate}
+    @keyframes depthPulse{0%{transform:scale(1);opacity:.8}100%{transform:scale(1.15);opacity:1}}
+    @keyframes depthDrift{0%{transform:translate(0,0)}100%{transform:translate(60px,-40px)}}
+
+    #bg-noir{background:#000}
+    .nb1{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,#141414 0%,#000 70%);animation:noirBreath 10s ease-in-out infinite alternate}
+    .nb2{position:absolute;width:120%;height:120%;top:-10%;left:-10%;background:radial-gradient(ellipse at 40% 40%,rgba(30,30,30,0.6) 0%,transparent 55%);animation:noirCrawl 18s ease-in-out infinite alternate}
+    @keyframes noirBreath{0%{opacity:.7}100%{opacity:1}}
+    @keyframes noirCrawl{0%{transform:translate(0,0)}100%{transform:translate(5%,3%)}}
+
+    /* ══ SETTINGS ══ */
+    .settings-btn{position:fixed;top:20px;right:20px;z-index:300;width:38px;height:38px;border-radius:50%;background:var(--dock-bg);border:0.5px solid var(--dock-border);backdrop-filter:blur(20px);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s}
+    .settings-btn:hover{background:var(--settings-hover)}
+    .settings-btn svg{width:18px;height:18px;stroke:var(--text-sec);stroke-width:1.6;fill:none;transition:transform .4s}
+    .settings-btn.open svg{transform:rotate(60deg)}
+    .settings-panel{position:fixed;top:68px;right:20px;z-index:300;width:252px;background:var(--settings-bg);border:0.5px solid var(--settings-border);border-radius:16px;padding:8px 0;backdrop-filter:blur(30px);box-shadow:0 20px 40px rgba(0,0,0,.35);opacity:0;transform:translateY(-8px) scale(.97);pointer-events:none;transition:opacity .2s,transform .2s}
+    .settings-panel.visible{opacity:1;transform:none;pointer-events:all}
+    .panel-title{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);padding:6px 16px 8px}
+    .panel-sep{height:0.5px;background:var(--sep);margin:4px 0}
+    .panel-item{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;cursor:pointer;transition:background .15s;user-select:none}
+    .panel-item:hover{background:var(--settings-hover)}
+    .panel-item-left{display:flex;align-items:center;gap:10px}
+    .panel-item svg{width:15px;height:15px;stroke:var(--text-sec);stroke-width:1.6;fill:none;flex-shrink:0}
+    .panel-item-label{font-size:13.5px;color:var(--text)}
+    .toggle{width:36px;height:22px;border-radius:11px;background:rgba(120,120,128,.32);position:relative;transition:background .25s;flex-shrink:0}
+    .toggle.on{background:#30d158}
+    .toggle::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:2px;left:2px;transition:transform .25s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+    .toggle.on::after{transform:translateX(14px)}
+    .sub-options{display:none;flex-direction:column}
+    .sub-options.open{display:flex}
+    .sub-opt{display:flex;align-items:center;gap:11px;padding:9px 16px 9px 42px;cursor:pointer;font-size:13px;color:var(--text-sec);transition:background .15s}
+    .sub-opt:hover{background:var(--settings-hover)}
+    .sub-opt.active{color:var(--text);font-weight:500}
+    .sub-check{color:#0a84ff;margin-left:auto;font-size:13px}
+    .bg-swatch{width:28px;height:18px;border-radius:5px;border:0.5px solid rgba(255,255,255,.12);flex-shrink:0}
+    .sw-particles{background:linear-gradient(135deg,#111,#222)}
+    .sw-aurora{background:linear-gradient(135deg,#200060,#003040)}
+    .sw-mesh{background:linear-gradient(135deg,#280050,#001230,#003020)}
+    .sw-depth{background:radial-gradient(ellipse at center,#18182a,#000)}
+    .sw-noir{background:radial-gradient(ellipse at center,#141414,#000)}
+    .lang-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+    /* ══ HEADER ══ */
+    .header{display:flex;flex-direction:column;align-items:center;gap:14px;animation:fadeUp .6s ease both;position:relative;z-index:1}
+    .app-icon{width:90px;height:90px;border-radius:22px;background:var(--surface);border:0.5px solid var(--border);display:flex;align-items:center;justify-content:center;transition:background .35s,border-color .35s}
+    .apple-logo{width:42px;height:42px;fill:var(--apple-logo);transition:fill .35s;display:block;margin-top:3px}
+    .welcome{font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--text-tag)}
+    h1{font-size:clamp(32px,5vw,46px);font-weight:300;letter-spacing:-.04em;color:var(--text);text-align:center;line-height:1.1}
+    h1 .plus{color:var(--text-muted)}
+
+    /* ══ CARDS ══ */
+    .cards{display:flex;gap:14px;animation:fadeUp .6s .1s ease both;position:relative;z-index:1;flex-wrap:wrap;justify-content:center;max-width:740px}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    .card{width:220px;background:var(--surface);border:0.5px solid var(--border);border-radius:20px;padding:22px 18px 18px;display:flex;flex-direction:column;gap:9px;cursor:pointer;transition:background .25s,border-color .25s,transform .2s,box-shadow .25s}
+    .card:active{transform:scale(0.97)!important;box-shadow:none!important}
+
+    .card-film:hover {background:var(--surface-hover);border-color:rgba(10,132,255,.5);transform:translateY(-3px);box-shadow:0 0 36px rgba(10,132,255,.2)}
+    .card-sport:hover{background:var(--surface-hover);border-color:rgba(48,209,88,.5);transform:translateY(-3px);box-shadow:0 0 36px rgba(48,209,88,.2)}
+    .card-anime:hover{background:var(--surface-hover);border-color:rgba(191,90,242,.5);transform:translateY(-3px);box-shadow:0 0 36px rgba(191,90,242,.2)}
+
+    .icon-box{width:48px;height:48px;border-radius:12px;background:var(--icon-bg);border:0.5px solid var(--sep);display:flex;align-items:center;justify-content:center;margin-bottom:2px;transition:background .25s}
+    .card-film:hover  .icon-box{background:rgba(10,132,255,.15)}
+    .card-sport:hover .icon-box{background:rgba(48,209,88,.15)}
+    .card-anime:hover .icon-box{background:rgba(191,90,242,.15)}
+
+    .card-tag{font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--text-tag);transition:color .25s}
+    .card-film:hover  .card-tag{color:#0a84ff}
+    .card-sport:hover .card-tag{color:#30d158}
+    .card-anime:hover .card-tag{color:#bf5af2}
+
+    .card-title{font-size:19px;font-weight:500;letter-spacing:-.02em;color:var(--text);line-height:1.2}
+    .card-desc{font-size:12px;color:var(--text-sec);line-height:1.55;flex:1}
+    .card-sep{height:0.5px;background:var(--sep);margin:4px 0}
+    .card-footer{display:flex;align-items:center;justify-content:space-between}
+    .card-url{font-size:11px;color:var(--text-muted)}
+
+    .arrow{width:26px;height:26px;border-radius:50%;background:rgba(128,128,128,.1);border:0.5px solid var(--border);display:flex;align-items:center;justify-content:center;transition:background .2s,border-color .2s}
+    .card-film:hover  .arrow{background:rgba(10,132,255,.15);border-color:rgba(10,132,255,.4)}
+    .card-sport:hover .arrow{background:rgba(48,209,88,.15);border-color:rgba(48,209,88,.4)}
+    .card-anime:hover .arrow{background:rgba(191,90,242,.15);border-color:rgba(191,90,242,.4)}
+    .arrow svg{width:13px;height:13px;stroke:var(--text-sec);stroke-width:2;fill:none;transition:stroke .25s}
+    .card-film:hover  .arrow svg{stroke:#0a84ff}
+    .card-sport:hover .arrow svg{stroke:#30d158}
+    .card-anime:hover .arrow svg{stroke:#bf5af2}
+
+    .footer-label{font-size:11px;color:var(--text-muted);letter-spacing:.07em;text-transform:uppercase;animation:fadeUp .6s .2s ease both;position:relative;z-index:1}
+
+    /* ══ DOCK ══ */
+    .dock{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:var(--dock-bg);backdrop-filter:blur(24px);border:0.5px solid var(--dock-border);border-radius:16px;padding:9px 18px;z-index:200;transition:background .35s}
+    .dot{width:12px;height:12px;border-radius:50%}
+    .dot-red{background:#ff5f57}.dot-yellow{background:#febc2e}.dot-green{background:#28c840}
+    .dock-sep{width:0.5px;height:18px;background:var(--sep);margin:0 6px}
+    .dock-label{font-size:12px;font-weight:500;color:var(--dock-label);letter-spacing:-.01em}
+    body.no-anim *,body.no-anim *::before,body.no-anim *::after{animation:none!important;transition:none!important}
+  </style>
+</head>
+<body>
+
+  <canvas id="bg-canvas"></canvas>
+  <div id="bg-aurora" class="bg-layer"><div class="aurora-blob ab1"></div><div class="aurora-blob ab2"></div><div class="aurora-blob ab3"></div></div>
+  <div id="bg-mesh"   class="bg-layer"><div class="mb1"></div><div class="mb2"></div><div class="mb3"></div></div>
+  <div id="bg-depth"  class="bg-layer"><div class="db1"></div><div class="db2"></div></div>
+  <div id="bg-noir"   class="bg-layer"><div class="nb1"></div><div class="nb2"></div></div>
+
+  <button class="settings-btn" id="settings-btn">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </button>
+
+  <div class="settings-panel" id="settings-panel">
+    <p class="panel-title" data-en="Preferences" data-es="Preferencias">Preferences</p>
+    <div class="panel-item" id="toggle-theme">
+      <div class="panel-item-left">
+        <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <span class="panel-item-label" data-en="Dark mode" data-es="Modo oscuro">Dark mode</span>
+      </div>
+      <div class="toggle on" id="theme-toggle"></div>
+    </div>
+    <div class="panel-item" id="toggle-anim">
+      <div class="panel-item-left">
+        <svg viewBox="0 0 24 24"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z"/><path d="M19 14l.75 2.25L22 17l-2.25.75L19 20l-.75-2.25L16 17l2.25-.75L19 14z"/></svg>
+        <span class="panel-item-label" data-en="Animations" data-es="Animaciones">Animations</span>
+      </div>
+      <div class="toggle on" id="anim-toggle"></div>
+    </div>
+    <div class="panel-sep"></div>
+    <div class="panel-item" id="bg-row">
+      <div class="panel-item-left">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        <span class="panel-item-label" data-en="Background" data-es="Fondo">Background</span>
+      </div>
+      <svg id="bg-chevron" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--text-muted);fill:none;stroke-width:2;flex-shrink:0;transition:transform .2s"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+    <div class="sub-options" id="bg-options">
+      <div class="sub-opt active" data-bg="particles"><div class="bg-swatch sw-particles"></div><span data-en="Particles" data-es="Partículas">Particles</span><span class="sub-check">✓</span></div>
+      <div class="sub-opt" data-bg="aurora"><div class="bg-swatch sw-aurora"></div><span data-en="Aurora" data-es="Aurora">Aurora</span></div>
+      <div class="sub-opt" data-bg="mesh"><div class="bg-swatch sw-mesh"></div><span data-en="Mesh" data-es="Degradado">Mesh</span></div>
+      <div class="sub-opt" data-bg="depth"><div class="bg-swatch sw-depth"></div><span data-en="Depth" data-es="Profundidad">Depth</span></div>
+      <div class="sub-opt" data-bg="noir"><div class="bg-swatch sw-noir"></div><span data-en="Noir" data-es="Noir">Noir</span></div>
+    </div>
+    <div class="panel-sep"></div>
+    <div class="panel-item" id="lang-row">
+      <div class="panel-item-left">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span class="panel-item-label" data-en="Language" data-es="Idioma">Language</span>
+      </div>
+      <svg id="lang-chevron" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--text-muted);fill:none;stroke-width:2;flex-shrink:0;transition:transform .2s"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+    <div class="sub-options" id="lang-options">
+      <div class="sub-opt active" data-lang="en"><div class="lang-dot" style="background:#0a84ff"></div>English<span class="sub-check">✓</span></div>
+      <div class="sub-opt" data-lang="es"><div class="lang-dot" style="background:#ff9f0a"></div>Español</div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="app-icon">
+      <svg class="apple-logo" viewBox="80 0 660 1000">
+        <path d="M788.1 340.9c-5.8 4.5-108.2 62.2-108.2 190.5 0 148.4 130.3 200.9 134.2 202.2-.6 3.2-20.7 71.9-68.7 141.9-42.8 61.6-87.5 123.1-155.5 123.1s-85.5-39.5-164-39.5c-76 0-103.7 40.8-165.9 40.8s-105-57.8-155.5-127.4C46 790.7 0 663 0 541.8c0-207.5 135.4-317.3 269-317.3 70.6 0 129.5 46.4 174.3 46.4 42.7 0 109.2-49.4 187.2-49.4 30.1 0 108.2 2.6 168.1 80.8zM554.1 107.2c15.3-18.9 37.4-53.5 37.4-87.9 0-4.5-.6-9-1.3-13.5-35.9 1.3-71.7 22.2-97 50.9-18.3 20.7-37.4 55.3-37.4 90.7 0 5.1.6 10.3 1.3 12.9 2.6.3 5.1.6 7.7.6 32.3 0 63.8-16.2 89.3-53.7z"/>
+      </svg>
+    </div>
+    <p class="welcome" data-en="Welcome to the Hub" data-es="Bienvenido al Hub">Welcome to the Hub</p>
+    <h1>Movie Hub<span class="plus">+</span></h1>
+  </div>
+
+  <!-- Cards -->
+  <div class="cards">
+
+    <!-- Movies & Series -->
+    <div class="card card-film" data-url="https://nextflicks.link/">
+      <div class="icon-box">
+        <!-- Popcorn: clean bucket + puffs -->
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8.5 12.5h9l-1.8 9H10.3l-1.8-9z" stroke="rgba(255,255,255,0.78)" stroke-width="1.4"/>
+          <line x1="7.5" y1="12.5" x2="18.5" y2="12.5" stroke="rgba(255,255,255,0.78)" stroke-width="1.4"/>
+          <!-- puffs -->
+          <circle cx="10" cy="10" r="2" stroke="rgba(255,255,255,0.78)" stroke-width="1.4"/>
+          <circle cx="13" cy="8.8" r="2" stroke="rgba(255,255,255,0.78)" stroke-width="1.4"/>
+          <circle cx="16" cy="10" r="2" stroke="rgba(255,255,255,0.78)" stroke-width="1.4"/>
+          <!-- bucket stripes -->
+          <line x1="11.2" y1="14" x2="10.7" y2="20" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+          <line x1="13" y1="14" x2="13" y2="20.5" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+          <line x1="14.8" y1="14" x2="15.3" y2="20" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+        </svg>
+      </div>
+      <p class="card-tag" data-en="On demand" data-es="A demanda">On demand</p>
+      <p class="card-title" data-en="Movies &amp;<br>Series" data-es="Películas y<br>Series">Movies &amp;<br>Series</p>
+      <p class="card-desc" data-en="Stream movies and TV shows anytime, on your schedule." data-es="Mira películas y series cuando quieras, a tu ritmo.">Stream movies and TV shows anytime, on your schedule.</p>
+      <div class="card-sep"></div>
+      <div class="card-footer">
+        <span class="card-url">nextflicks.link</span>
+        <div class="arrow"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </div>
+    </div>
+
+    <!-- Live Sport — clean soccer ball -->
+    <div class="card card-sport" data-url="https://livsport.dpdns.org/">
+      <div class="icon-box">
+        <!-- Soccer ball: circle + classic hexagon panel pattern -->
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="rgba(255,255,255,0.78)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="13" cy="13" r="10"/>
+          <!-- center pentagon -->
+          <polygon points="13,8 16.8,10.8 15.4,15.2 10.6,15.2 9.2,10.8" stroke-width="1.3"/>
+          <!-- seams from pentagon to edge -->
+          <line x1="13" y1="8"    x2="13" y2="3"/>
+          <line x1="16.8" y1="10.8" x2="21.5" y2="8.5"/>
+          <line x1="15.4" y1="15.2" x2="19.5" y2="19.5"/>
+          <line x1="10.6" y1="15.2" x2="6.5"  y2="19.5"/>
+          <line x1="9.2"  y1="10.8" x2="4.5"  y2="8.5"/>
+        </svg>
+      </div>
+      <p class="card-tag" data-en="Live now" data-es="En vivo">Live now</p>
+      <p class="card-title" data-en="Live<br>Sport" data-es="Deporte<br>en Vivo">Live<br>Sport</p>
+      <p class="card-desc" data-en="Watch live sports channels from around the world in real time." data-es="Ve canales deportivos en vivo de todo el mundo en tiempo real.">Watch live sports channels from around the world in real time.</p>
+      <div class="card-sep"></div>
+      <div class="card-footer">
+        <span class="card-url">livsport.dpdns.org</span>
+        <div class="arrow"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </div>
+    </div>
+
+    <!-- Anime — sakura blossom -->
+    <div class="card card-anime" data-url="https://open.aniyae.net/">
+      <div class="icon-box">
+        <!-- Sakura: 5 rounded petals + small center circle -->
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="rgba(255,255,255,0.78)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Petal 1 — top -->
+          <ellipse cx="13" cy="8" rx="2.4" ry="4" transform="rotate(0 13 13)" />
+          <!-- Petal 2 — top-right -->
+          <ellipse cx="13" cy="8" rx="2.4" ry="4" transform="rotate(72 13 13)" />
+          <!-- Petal 3 — bottom-right -->
+          <ellipse cx="13" cy="8" rx="2.4" ry="4" transform="rotate(144 13 13)" />
+          <!-- Petal 4 — bottom-left -->
+          <ellipse cx="13" cy="8" rx="2.4" ry="4" transform="rotate(216 13 13)" />
+          <!-- Petal 5 — top-left -->
+          <ellipse cx="13" cy="8" rx="2.4" ry="4" transform="rotate(288 13 13)" />
+          <!-- Center -->
+          <circle cx="13" cy="13" r="2.2" fill="rgba(255,255,255,0.12)"/>
+        </svg>
+      </div>
+      <p class="card-tag" data-en="Streaming" data-es="Streaming">Streaming</p>
+      <p class="card-title" data-en="Anime" data-es="Anime">Anime</p>
+      <p class="card-desc" data-en="Watch your favorite anime series and movies, subtitled or dubbed." data-es="Mira tus series y películas de anime favoritas, con subtítulos o dobladas.">Watch your favorite anime series and movies, subtitled or dubbed.</p>
+      <div class="card-sep"></div>
+      <div class="card-footer">
+        <span class="card-url">aniyae.net</span>
+        <div class="arrow"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="footer-label" data-en="Select to continue" data-es="Selecciona para continuar">Select to continue</p>
+
+  <div class="dock">
+    <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+    <div class="dock-sep"></div>
+    <span class="dock-label">Movie Hub+</span>
+  </div>
+
+  <script>
+    const canvas=document.getElementById('bg-canvas'),ctx=canvas.getContext('2d');
+    let W,H,particles=[],animEnabled=true,rafId,currentBg='particles';
+    function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight}
+    function mkP(){return{x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+0.3,vx:(Math.random()-.5)*0.16,vy:(Math.random()-.5)*0.16,a:Math.random()*0.55+0.1}}
+    function initP(){particles=[];for(let i=0;i<Math.floor(W*H/13000);i++)particles.push(mkP())}
+    function draw(){
+      ctx.clearRect(0,0,W,H);
+      if(currentBg!=='particles'){rafId=requestAnimationFrame(draw);return}
+      const dark=document.documentElement.getAttribute('data-theme')!=='light';
+      particles.forEach(p=>{
+        p.x+=p.vx;p.y+=p.vy;
+        if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0;
+        ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.fillStyle=dark?`rgba(255,255,255,${p.a*.5})`:`rgba(0,0,0,${p.a*.18})`;ctx.fill();
+      });
+      for(let i=0;i<particles.length;i++)for(let j=i+1;j<particles.length;j++){
+        const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y,d=Math.sqrt(dx*dx+dy*dy);
+        if(d<100){const a=(1-d/100)*(dark?.045:.025);ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);ctx.strokeStyle=dark?`rgba(255,255,255,${a})`:`rgba(0,0,0,${a})`;ctx.lineWidth=0.5;ctx.stroke()}
+      }
+      rafId=requestAnimationFrame(draw);
+    }
+    function startAnim(){if(!rafId)rafId=requestAnimationFrame(draw)}
+    function stopAnim(){if(rafId){cancelAnimationFrame(rafId);rafId=null;ctx.clearRect(0,0,W,H)}}
+    window.addEventListener('resize',()=>{resize();initP()});
+    resize();initP();startAnim();
+
+    function setBg(name){
+      currentBg=name;
+      canvas.style.opacity=name==='particles'?'1':'0';
+      ['aurora','mesh','depth','noir'].forEach(id=>document.getElementById('bg-'+id).classList.toggle('active',id===name));
+    }
+
+    document.querySelectorAll('.card').forEach(c=>c.addEventListener('click',()=>window.location.href=c.dataset.url));
+
+    const btn=document.getElementById('settings-btn'),panel=document.getElementById('settings-panel');
+    btn.addEventListener('click',e=>{e.stopPropagation();const o=panel.classList.toggle('visible');btn.classList.toggle('open',o)});
+    document.addEventListener('click',e=>{if(!panel.contains(e.target)&&e.target!==btn){panel.classList.remove('visible');btn.classList.remove('open')}});
+
+    document.getElementById('toggle-theme').addEventListener('click',()=>{
+      const dark=document.documentElement.getAttribute('data-theme')==='dark';
+      document.documentElement.setAttribute('data-theme',dark?'light':'dark');
+      document.getElementById('theme-toggle').classList.toggle('on',!dark);
+    });
+    document.getElementById('toggle-anim').addEventListener('click',()=>{
+      animEnabled=!animEnabled;
+      document.getElementById('anim-toggle').classList.toggle('on',animEnabled);
+      document.body.classList.toggle('no-anim',!animEnabled);
+      animEnabled?startAnim():stopAnim();
+    });
+
+    function setupSub(rowId,optsId,chevId,cb){
+      const row=document.getElementById(rowId),opts=document.getElementById(optsId),chev=document.getElementById(chevId);
+      row.addEventListener('click',e=>{e.stopPropagation();opts.classList.toggle('open');chev.style.transform=opts.classList.contains('open')?'rotate(180deg)':''});
+      opts.querySelectorAll('.sub-opt').forEach(opt=>{
+        opt.addEventListener('click',e=>{
+          e.stopPropagation();
+          opts.querySelectorAll('.sub-opt').forEach(o=>{o.classList.remove('active');const c=o.querySelector('.sub-check');if(c)c.remove()});
+          opt.classList.add('active');
+          const ck=document.createElement('span');ck.className='sub-check';ck.textContent='✓';opt.appendChild(ck);
+          cb(opt);opts.classList.remove('open');chev.style.transform='';
+        });
+      });
+    }
+    setupSub('bg-row','bg-options','bg-chevron',opt=>setBg(opt.dataset.bg));
+    setupSub('lang-row','lang-options','lang-chevron',opt=>{
+      const l=opt.dataset.lang;
+      document.querySelectorAll('[data-en]').forEach(el=>el.innerHTML=el.getAttribute('data-'+l)||el.getAttribute('data-en'));
+    });
+  </script>
+</body>
+</html>
